@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EMS - Terminal de Secours</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        :root {
+            --bg-dark: #0f111a;
+            --bg-sidebar: #161925;
+            --accent-red: #d32f2f;
+            --text-main: #e0e0e0;
+            --card-bg: #1f2235;
+        }
+
+        body {
+            margin: 0; font-family: 'Segoe UI', sans-serif;
+            background-color: var(--bg-dark); color: var(--text-main);
+            display: flex; height: 100vh; overflow: hidden;
+        }
+
+        /* Écran de connexion */
+        #login-screen {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: var(--bg-dark); display: flex; flex-direction: column;
+            justify-content: center; align-items: center; z-index: 9999;
+        }
+
+        .login-card {
+            background: var(--bg-sidebar); padding: 40px; border-radius: 15px;
+            text-align: center; border-top: 5px solid var(--accent-red);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+
+        .btn-discord {
+            background: #5865F2; color: white; border: none; padding: 15px 30px;
+            font-size: 1.1rem; font-weight: bold; border-radius: 5px;
+            cursor: pointer; display: flex; align-items: center; gap: 10px; transition: 0.3s;
+        }
+        .btn-discord:hover { background: #4752C4; transform: scale(1.05); }
+
+        /* Interface Principale (Cachée au début) */
+        #main-ui { display: none; width: 100%; display: flex; }
+
+        .sidebar {
+            width: 260px; background-color: var(--bg-sidebar);
+            display: flex; flex-direction: column; padding: 20px;
+            border-right: 2px solid var(--accent-red);
+        }
+
+        .nav-link {
+            padding: 15px; color: var(--text-main); text-decoration: none;
+            border-radius: 8px; margin-bottom: 10px; transition: 0.3s;
+            display: flex; align-items: center; gap: 15px; background: rgba(255, 255, 255, 0.05);
+        }
+        .nav-link:hover { background: var(--accent-red); }
+
+        .content { flex: 1; padding: 40px; overflow-y: auto; }
+        .card { background: var(--card-bg); padding: 25px; border-radius: 12px; border-top: 4px solid var(--accent-red); margin-bottom: 20px;}
+        
+        .user-info { display: flex; align-items: center; gap: 10px; margin-top: auto; padding: 10px; background: rgba(0,0,0,0.2); border-radius: 5px;}
+        .user-avatar { width: 32px; height: 32px; border-radius: 50%; border: 1px solid var(--accent-red); }
+    </style>
+</head>
+<body>
+
+    <div id="login-screen">
+        <div class="login-card">
+            <h1 style="color: var(--accent-red);">ACCÈS RESTREINT</h1>
+            <p>Veuillez vous identifier pour accéder au terminal EMS</p><br>
+            <button class="btn-discord" onclick="login()">
+                <i class="fab fa-discord"></i> CONNEXION DISCORD
+            </button>
+        </div>
+    </div>
+
+    <div id="main-ui">
+        <div class="sidebar">
+            <h2>EMS SUPPORT</h2>
+            <a href="#" class="nav-link"><i class="fas fa-home"></i> Dashboard</a>
+            <a href="#" class="nav-link"><i class="fas fa-user-injured"></i> Dossiers Patients</a>
+            <a href="#" class="nav-link"><i class="fas fa-file-medical"></i> Rapports</a>
+            <a href="#" class="nav-link"><i class="fas fa-pills"></i> Pharmacie</a>
+            
+            <div id="user-profile" class="user-info">
+                <img id="avatar" class="user-avatar" src="">
+                <span id="username">Chargement...</span>
+                <i class="fas fa-sign-out-alt" onclick="logout()" style="margin-left:auto; cursor:pointer;"></i>
+            </div>
+        </div>
+
+        <div class="content">
+            <h1>Terminal Médical - <span style="color:var(--accent-red)">LSMS</span></h1>
+            <div class="card">
+                <h3>Bienvenue dans le MDT</h3>
+                <p>Système de gestion des urgences de Los Santos.</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const CLIENT_ID = '1472988748487590144';
+        const REDIRECT_URI = window.location.href.split('#')[0].split('?')[0]; 
+
+        function login() {
+            const url = `https://discord.com/api/oauth2/authorize?client_id=${CLIENT_ID}&redirect_uri=${encodeURIComponent(REDIRECT_URI)}&response_type=token&scope=identify`;
+            window.location.href = url;
+        }
+
+        function logout() {
+            localStorage.removeItem('discord_token');
+            window.location.href = REDIRECT_URI;
+        }
+
+        window.onload = () => {
+            const fragment = new URLSearchParams(window.location.hash.slice(1));
+            let token = fragment.get('access_token') || localStorage.getItem('discord_token');
+
+            if (token) {
+                localStorage.setItem('discord_token', token);
+                fetch('https://discord.com/api/users/@me', {
+                    headers: { authorization: `Bearer ${token}` }
+                })
+                .then(res => {
+                    if (!res.ok) throw new Error();
+                    return res.json();
+                })
+                .then(user => {
+                    // Masquer login, afficher site
+                    document.getElementById('login-screen').style.display = 'none';
+                    document.getElementById('main-ui').style.display = 'flex';
+                    
+                    // Remplir les infos user
+                    document.getElementById('username').innerText = user.username;
+                    if(user.avatar) {
+                        document.getElementById('avatar').src = `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.png`;
+                    }
+                    // Nettoyer l'URL
+                    window.history.replaceState({}, document.title, REDIRECT_URI);
+                })
+                .catch(() => logout());
+            }
+        };
+    </script>
+</body>
+</html>
