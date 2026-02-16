@@ -57,7 +57,12 @@
 
         /* --- DASHBOARD ELEMENTS --- */
         .stats-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; margin-bottom: 30px; }
-        .stat-card { background: var(--card-bg); padding: 20px; border-radius: 15px; border: 1px solid var(--border-color); text-align: center; }
+        .stat-card { 
+            background: var(--card-bg); padding: 20px; border-radius: 15px; 
+            border: 1px solid var(--border-color); text-align: center;
+            cursor: pointer; transition: 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .stat-card:hover { transform: translateY(-5px); border-color: var(--accent-blue); background: rgba(0, 210, 255, 0.02); }
         .stat-card i { color: var(--accent-blue); font-size: 1.5rem; margin-bottom: 10px; }
         .stat-card h4 { margin: 5px 0; font-size: 1.5rem; color: #fff; }
         .stat-card span { color: var(--text-dim); font-size: 0.8rem; text-transform: uppercase; }
@@ -74,8 +79,6 @@
         }
         .card::before { content: ""; position: absolute; top: 0; left: 0; width: 100%; height: 3px; background: var(--accent-red); }
 
-        .status-badge { padding: 4px 12px; background: rgba(46, 204, 113, 0.2); color: #2ecc71; border-radius: 20px; font-size: 0.8rem; font-weight: bold; }
-
         .tab-content { display: none; animation: slideUp 0.4s ease; }
         .tab-content.active { display: block; }
         @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
@@ -83,7 +86,6 @@
         /* --- USER SECTION --- */
         .user-info { display: flex; align-items: center; gap: 12px; margin-top: auto; padding: 15px; background: rgba(255,255,255,0.03); border-radius: 15px; border: 1px solid var(--border-color); }
         .user-avatar { width: 45px; height: 45px; border-radius: 12px; border: 2px solid var(--accent-red); transition: 0.3s; }
-        .user-avatar:hover { transform: scale(1.1); }
     </style>
 </head>
 <body>
@@ -134,24 +136,24 @@
                 </div>
 
                 <div class="stats-row">
-                    <div class="stat-card">
+                    <div class="stat-card" onclick="updateStat('units')" title="Cliquez pour modifier">
                         <i class="fas fa-ambulance"></i>
                         <h4 id="stat-units">03</h4>
                         <span>Unités en patrouille</span>
                     </div>
-                    <div class="stat-card">
+                    <div class="stat-card" onclick="updateStat('beds')" title="Cliquez pour modifier">
                         <i class="fas fa-bed"></i>
-                        <h4>12</h4>
-                        <span>En Service</span>
+                        <h4 id="stat-beds">12</h4>
+                        <span>Lits disponibles</span>
                     </div>
-                    <div class="stat-card" style="border-bottom: 3px solid var(--accent-red);">
+                    <div class="stat-card" style="border-bottom: 3px solid var(--accent-red);" onclick="updateStat('emergencies')" title="Cliquez pour modifier">
                         <i class="fas fa-procedures" style="color: var(--accent-red);"></i>
-                        <h4>02</h4>
+                        <h4 id="stat-emergencies">02</h4>
                         <span>Urgences Vitales</span>
                     </div>
-                    <div class="stat-card">
+                    <div class="stat-card" onclick="updateStat('staff')" title="Cliquez pour modifier">
                         <i class="fas fa-user-md"></i>
-                        <h4>08</h4>
+                        <h4 id="stat-staff">08</h4>
                         <span>Staff en ville</span>
                     </div>
                 </div>
@@ -175,70 +177,14 @@
                         </ul>
                     </div>
                 </div>
-
-                <div class="card" style="margin-top: 25px; border-left: 4px solid var(--accent-blue); background: rgba(0, 210, 255, 0.02);">
-                    <h3><i class="fas fa-exclamation-triangle" style="color: var(--accent-blue); margin-right: 10px;"></i> Note de Service</h3>
-                    <p>Pensez à bien clôturer vos dossiers patients avant de quitter votre service. Toute absence de rapport sera sanctionnée.</p>
-                </div>
             </div>
 
-            <div id="patients" class="tab-content">
-                <h1>Dossiers Patients</h1>
-                <div class="card">Recherche sécurisée dans la base de données SAMS...</div>
-            </div>
-
-            <div id="reports" class="tab-content">
-                <h1>Rapports Médicaux</h1>
-                <div class="card">Historique des interventions archivées.</div>
-            </div>
-            
-            <div id="pharmacy" class="tab-content">
-                <h1>Pharmacie</h1>
-                <div class="card">Gestion des stocks d'adrénaline et de matériel.</div>
-            </div>
+            <div id="patients" class="tab-content"><h1>Dossiers Patients</h1><div class="card">Base de données sécurisée.</div></div>
+            <div id="reports" class="tab-content"><h1>Rapports Médicaux</h1><div class="card">Archives des interventions.</div></div>
+            <div id="pharmacy" class="tab-content"><h1>Pharmacie</h1><div class="card">Inventaire des stocks.</div></div>
         </div>
     </div>
 
-    <script>
-        const CLIENT_ID = '1472988748487590144';
-        const REDIRECT_URI = 'https://ttvgortix.github.io/ems-mdt/'; 
-
-        function showTab(tabId, element) {
-            document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
-            document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
-            document.getElementById(tabId).classList.add('active');
-            element.classList.add('active');
-        }
-
-        function login() {
-            window.location.href = `https://discord.com/api/oauth2/authorize?client_id=${CLIENT_ID}&redirect_uri=${encodeURIComponent(REDIRECT_URI)}&response_type=token&scope=identify`;
-        }
-
-        function logout() {
-            localStorage.removeItem('discord_token');
-            window.location.href = REDIRECT_URI;
-        }
-
-        window.onload = () => {
-            const fragment = new URLSearchParams(window.location.hash.slice(1));
-            let token = fragment.get('access_token') || localStorage.getItem('discord_token');
-
-            if (token) {
-                localStorage.setItem('discord_token', token);
-                fetch('https://discord.com/api/users/@me', { headers: { authorization: `Bearer ${token}` } })
-                .then(res => res.json())
-                .then(user => {
-                    document.getElementById('login-screen').style.display = 'none';
-                    document.getElementById('main-ui').style.display = 'flex';
-                    document.getElementById('username').innerText = user.username;
-                    document.getElementById('user-greeting').innerText = user.username;
-                    if(user.avatar) {
-                        document.getElementById('avatar').src = `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.png`;
-                    }
-                    window.history.replaceState({}, document.title, REDIRECT_URI);
-                }).catch(() => logout());
-            }
-        };
-    </script>
+    <script src="script.js"></script>
 </body>
 </html>
